@@ -1,0 +1,87 @@
+; Comments start with a semi-colon
+; Empty lines are ignored
+; Do not use additional spaces
+
+; If it helps reading you can import the Notepad++.xml as User Defined Language file
+; Should help you formatting everything
+
+; A line starting with a less (<) marks a trigger
+; Triggers are regular expressions - look them up, you can do freaky stuff with those
+; Regular expressions are flagged as case-insensitive
+; You can test them here http://www.regextester.com/ (or at any other website, there are hundrets)
+
+; The next line is a list of flags for that trigger as plain text, speparated with a comma and a space in order (, )
+; This line is optional and may be omitted
+; Currently there are the following flags:
+; Random - Will pick a random response instead of going through the list in order
+; Cooldown:A - Ignore this command for A seconds after the last use
+; RankAbove:R - The min rank (rank R exclusive) to use this trigger (Ranks are NONE, USER, SUB, MOD, HOST)
+; RankMax:R - The max rank (rank R incluseive) to use this trigger (Ranks are NONE, USER, SUB, MOD, HOST)
+
+; All following lines starting with a greater (>) mark a response
+; A response may not contain line breaks - those are not supported by IRC (the software used for Twitch-chat)
+; Following expressions are automatically replaced:
+; %sender% - the person that triggered the message
+; %rng:~A,B% - a random number between (including) A and (including) B
+; If you catch regex groups you can paste them with the usual $n
+
+;; Limiting commands the bot comes with
+; play shall be "SUB only"
+<!play.*
+RankAbove:USER
+
+<!rank
+Cooldown:1, RankAbove:NONE, RankMax:USER
+>You are User
+<!rank
+Cooldown:1, RankAbove:USER, RankMax:SUB
+>You are Subsciber
+<!rank
+Cooldown:1, RankAbove:SUB, RankMax:MOD
+>You are Moderator
+<!rank
+Cooldown:1, RankAbove:MOD, RankMax:HOST
+>You are worthless Kappa
+
+<!help
+Cooldown:3
+>This channel is running DosBot. You can get help about the following topics: play, throw, vote
+
+<!help play
+Cooldown:3
+>Use '!play list' to get a list of all sounds or '!play <SoundName>' to play a sound on stream. If enabled you can just type the sounds name in chat (nothing else) and it'll play.
+
+<!help throw
+Cooldown:3
+>With '!throw <Emote>' you can throw emotes on the streamers screen. You can throw up to 10 emotes at the same time.
+
+<!help vote
+Cooldown:3
+>Mods and above can ask questions with '!ask <Question> [<Option> <Option> [<Option>...]]' where no option results in a Yea/Nay vote. To vote for an option use '!vote <Number>'.
+
+<!commands
+Cooldown:5
+>The following commands exist: !play !thorw !ask !callvote !vote !roll !8ball !quote
+
+<!roll
+Cooldown:10
+>%sender% rolled a: %rng:~1,6%
+
+; the [^\s]+ indicates at lease 1 non-space character, followed by anything (.*)
+<!8ball [^\s]+.*
+Random, Cooldown:10
+>The 8Ball says VoteYea
+>The 8Ball says VoteNay
+; Duplicate those to make them more likely
+>The 8Ball says VoteYea
+>The 8Ball says VoteNay
+; And the meme response :)
+>The 8Ball says maybe Kappa
+
+<!quote
+Random, Cooldown:10
+>There's currently nothing to quote - I'm only streaming for like a week! ;D
+
+<.*who.*\s.*best.*\s.*streamer.*
+Cooldown:5
+>The best streamer has to be %sender%

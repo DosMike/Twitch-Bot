@@ -6,7 +6,7 @@ import java.net.Socket;
 import java.util.LinkedList;
 import java.util.List;
 
-import de.dosmike.twitch.knarf.Console;
+import de.dosmike.twitch.dosbot.Console;
 
 public class TelnetServer extends Stoppable {
 	

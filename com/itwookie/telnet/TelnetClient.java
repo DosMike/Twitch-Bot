@@ -4,7 +4,7 @@ import java.io.IOException;
 import java.net.InetAddress;
 import java.net.Socket;
 
-import de.dosmike.twitch.knarf.Console;
+import de.dosmike.twitch.dosbot.Console;
 
 public class TelnetClient {
 	

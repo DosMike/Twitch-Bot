@@ -4,7 +4,7 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
 
-import de.dosmike.twitch.knarf.Console;
+import de.dosmike.twitch.dosbot.Console;
 
 public class TelnetReceiver extends Stoppable {
 	BufferedReader in;

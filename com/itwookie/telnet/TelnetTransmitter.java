@@ -3,7 +3,7 @@ package com.itwookie.telnet;
 import java.io.OutputStreamWriter;
 import java.net.Socket;
 
-import de.dosmike.twitch.knarf.Console;
+import de.dosmike.twitch.dosbot.Console;
 
 public class TelnetTransmitter {
 	OutputStreamWriter out;

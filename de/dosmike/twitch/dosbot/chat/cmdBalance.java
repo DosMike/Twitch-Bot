@@ -1,7 +1,7 @@
 package de.dosmike.twitch.dosbot.chat;
 
 import de.dosmike.twitch.dosbot.ChatRank;
-import de.dosmike.twitch.dosbot.PointsHandler;
+import de.dosmike.twitch.dosbot.modulehandler.PointsHandler;
 
 public class cmdBalance extends Command {
 	public cmdBalance() {
@@ -9,8 +9,9 @@ public class cmdBalance extends Command {
 	}
 	
 	@Override
-	public void run(String user, ChatRank rank, String[] args, boolean silent) {
+	public boolean run(String user, ChatRank rank, String[] args, boolean silent) {
 		String f = args.length>0 ? args[0] : user;
 		getTwitch().sendChat(f + " currently has " + PointsHandler.balance(f) + " " + getCommandName());
+		return true;
 	}
 }

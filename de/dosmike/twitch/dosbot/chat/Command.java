@@ -21,5 +21,6 @@ public abstract class Command {
 	public Command(String commandName, String description) {
 		name=commandName; desc=description; getTwitch();
 	}
-	public abstract void run(String user, ChatRank rank, String[] args, boolean silent);
+	/** @returns if command was executed successfully, false if execution was canceled */
+	public abstract boolean run(String user, ChatRank rank, String[] args, boolean silent);
 }

@@ -1,7 +1,7 @@
 package de.dosmike.twitch.dosbot.chat;
 
 import de.dosmike.twitch.dosbot.ChatRank;
-import de.dosmike.twitch.dosbot.VoteHandler;
+import de.dosmike.twitch.dosbot.modulehandler.VoteHandler;
 
 public class cmdCallVote extends Command{
 	public cmdCallVote() {
@@ -9,7 +9,8 @@ public class cmdCallVote extends Command{
 	}
 	
 	@Override
-	public void run(String user, ChatRank rank, String[] args, boolean silent) {
+	public boolean run(String user, ChatRank rank, String[] args, boolean silent) {
 		VoteHandler.startVote(user, args);
+		return true;
 	}
 }

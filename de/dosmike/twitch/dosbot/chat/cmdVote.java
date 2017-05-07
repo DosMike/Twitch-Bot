@@ -1,7 +1,7 @@
 package de.dosmike.twitch.dosbot.chat;
 
 import de.dosmike.twitch.dosbot.ChatRank;
-import de.dosmike.twitch.dosbot.VoteHandler;
+import de.dosmike.twitch.dosbot.modulehandler.VoteHandler;
 
 public class cmdVote extends Command{
 	public cmdVote() {
@@ -9,7 +9,7 @@ public class cmdVote extends Command{
 	}
 	
 	@Override
-	public void run(String user, ChatRank rank, String[] args, boolean silent) {
+	public boolean run(String user, ChatRank rank, String[] args, boolean silent) {
 		if (args.length == 0) {
 			VoteHandler.status(false);
 			//Executable.handler.sendChat("Use number or name to vote - e.g. "+Executable.handler.CommandPrefix+"vote 1 or "+Executable.handler.CommandPrefix+"vote \"That Option\"");
@@ -18,5 +18,6 @@ public class cmdVote extends Command{
 		} else {
 			VoteHandler.vote(user, String.join(" ", args));
 		}
+		return true;
 	}
 }

@@ -29,10 +29,10 @@ public class EmoteDrop extends Sprite {
 		super(image);
 		
 		if (anfang == null) {
-			String[] tmp = Executable.cfg.get("BOT", "EmotesFade").split(",");
+			String[] tmp = Executable.cfg.get("Overlay", "EmotesFade").split(",");
 			anfang = Float.parseFloat(tmp[0]);
 			fadeSpan = Float.parseFloat(tmp[1])-anfang;
-			tmp = Executable.cfg.get("BOT", "EmotesSpeed").split(",");
+			tmp = Executable.cfg.get("Overlay", "EmotesSpeed").split(",");
 			speedMin = Float.parseFloat(tmp[0])*screenSize.height;
 			speedRange = Float.parseFloat(tmp[1])*screenSize.height-speedMin;
 		}

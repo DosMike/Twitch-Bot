@@ -1,4 +1,6 @@
-package de.dosmike.twitch.dosbot;
+package de.dosmike.twitch.dosbot.modulehandler;
+
+import de.dosmike.twitch.dosbot.Executable;
 
 public class Pyramid {
 	String emote;
@@ -39,7 +41,7 @@ public class Pyramid {
 	}
 	
 	public int getValue() {
-		return ((int)Math.pow(2.0,height-1.0)-1) * Executable.handler.getViewcount();
+		return ((int)Math.pow(2.0,height-1.0)-1) * Executable.getTelnetHandler().getViewcount();
 	}
 	public int breakValue() {
 		return (int)(length==0?getValue()*0.5:getValue()*(progress+1)/length);

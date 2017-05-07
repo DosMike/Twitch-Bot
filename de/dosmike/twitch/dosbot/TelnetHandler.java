@@ -1,8 +1,12 @@
 package de.dosmike.twitch.dosbot;
 
 import java.awt.Image;
+import java.util.HashMap;
+import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -10,6 +14,8 @@ import com.itwookie.telnet.ReceiverCallback;
 import com.itwookie.telnet.TelnetClient;
 
 import de.dosmike.twitch.dosbot.chat.CommandHandler;
+import de.dosmike.twitch.dosbot.modulehandler.PointsHandler;
+import de.dosmike.twitch.dosbot.modulehandler.PyramidHandler;
 import de.dosmike.twitch.dosbot.overlay.sprites.EmoteDrop;
 
 public class TelnetHandler implements ReceiverCallback {
@@ -29,32 +35,44 @@ public class TelnetHandler implements ReceiverCallback {
 	public static final String TwitchTags_Subscriber = "subscriber";
 	public static final String TwitchTags_Follower = "follower"; //pseydo tag, IRC does not deliver this information!
 	
-	List<String> viewers = new LinkedList<>();
+	Map<String, Long> viewers = new HashMap<>();
 	public void readAllViewers() {
 		enqueue(".names #" + Executable.targetChannel);
 	}
 	public void registerViewer(String name) {
 		name = name.toLowerCase();
-		if (!viewers.contains(name)) viewers.add(name);
+		if (!viewers.containsKey(name)) viewers.put(name, 0l);
 	}
 	public void forgetViewer(String name) {
 		viewers.remove(name.toLowerCase());
 	}
 	public boolean knowsViewer(String name) {
-		return viewers.contains(name.toLowerCase());
+		return viewers.containsKey(name.toLowerCase());
 	}
 	public List<String> getViewers() {
 		List<String> copy = new LinkedList<>(); //no problems with modifications
-		for (int i = 0; i < viewers.size(); i++) {
-			copy.add(viewers.get(i));
-		}
+		Set<String> keys = viewers.keySet();
+		copy.addAll(keys);
 		return copy;
 	}
 	public int getViewcount() {
 		return viewers.size();
 	}
+	/** If someone chatted within the last 2 minutes they are considered active */
+	public boolean isLurking(String viewer) {
+		viewer = viewer.toLowerCase();
+		if (!viewers.containsKey(viewer)) return true;
+		return (System.currentTimeMillis()-viewers.get(viewer) <= 120000);
+	}
+	public void updateCTS(String u) {
+		u=u.toLowerCase();
+		viewers.put(u, System.currentTimeMillis());
+	}
 	
 	List<ChatTrigger> trigger = new LinkedList<>();
+	public Iterator<ChatTrigger> getTriggers() {
+		return trigger.iterator();
+	}
 	
 	List<Long> commandLimiter = new LinkedList<>(); 
 	//All timestamps, do not send more than 100 Messages per 30 sec
@@ -62,6 +80,9 @@ public class TelnetHandler implements ReceiverCallback {
 	static int commandsPer30sec = 90; //-10% for safety
 	
 	CommandHandler cmdHandler = new CommandHandler();
+	public CommandHandler getCommandHandler() {
+		return cmdHandler;
+	}
 	
 	List<String> queue = new LinkedList<>();
 	/** the queue is used when we want to wait for a response before continuing */
@@ -197,8 +218,13 @@ public class TelnetHandler implements ReceiverCallback {
 			Console.println(Console.FB.RED, "Unable to read username from PRIVMSG!", Console.RESET);
 			return;
 		}
-		ChatRank rank = null; // get rank later - or - only when we need it
-		String displayName = ClientStorage.getCV(name, "display-name").get();
+		
+		ChatRank rank = ChatRank.forUser(name, true);
+		updateCTS(name);
+		String /*displayName = ClientStorage.getCV(name, "display-name").get();
+		if (displayName.isEmpty())*/ displayName=name;
+		//Display name is causing problems
+		
 		//Console.printf("%s: %s\n", name, message);
 		/*Console.println(
 				//( r.equals(ChatRank.USER) ? "" : "["+r+"]"),
@@ -218,25 +244,45 @@ public class TelnetHandler implements ReceiverCallback {
 				displayName, ": ", Console.RESET, message);*/
 
 		// -- START CHAT TRIGGER HANDLING --
-		boolean hasPerm = false, found = false, playPerm=true; //the playPerm is requred to check the commandless play mode
+		boolean hasPerm = false, found = false;//, playPerm=true; //the playPerm is requred to check the commandless play mode
+		int commandCost=0;
+		ChatTrigger matchedTrigger=null;
 		for (ChatTrigger t : trigger) {
 			Matcher tmp = t.getMatcher(message);
-			if (tmp.matches()) {
-				if (rank==null) rank = ChatRank.forUser(name, true); // As tmp.matches we know we need the rank for the user, so get it 
+			if (tmp.matches()) { 
 				found=true;
+				Console.println("Using chat trigger "+t);
+				matchedTrigger = t;
 				if (t.checkPerms(rank)) {
-					if (t.hasResponses()) { // if it has responses it is a custom command
-						t.respond(tmp, name);
-						hasPerm=false; //just block other command execution
-					} else 
-						hasPerm=true; //no response, see what the command handler has to offer
-					break;
+					if (t.checkPrice(name)) { //can we afford this command?
+						if (t.hasResponses()) { // if it has responses it is a custom command
+							t.respond(tmp, name);
+							hasPerm=false; //just block other command execution
+						} else if (message.startsWith("?")) { //is help command
+							hasPerm=true; //check help first as "isOnCooldown" also sets cooldown if it would return false
+						} else if (!t.isOnCooldown() //hasResponse() does cooldown check on it's own
+								&& !t.isOnCooldown(name) //check both global and client cooldown
+								&& message.startsWith("!")) { //no price for help
+							commandCost = t.getPrice(); // cash if successful later
+							hasPerm=true; //no response, see what the command handler has to offer
+						} else {
+							Console.println("Command on cooldown");
+						}
+						break;
+					} else {
+//						hasPerm=false;
+						sendChat(name, "You do not have enough " + PointsHandler.getCurrencyName() + " for this command!");
+					}
 				} else {
-					hasPerm=false;
+//					hasPerm=false;
+					Console.println("No permission");
 				}
 			}
 		}
-		if (!found) hasPerm=true; //if we have no rules for that command, let the command handle stuff
+		if (!found) {
+			Console.println("No trigger found");
+			hasPerm=true; //if we have no rules for that command, let the command handle stuff
+		}
 		// -- END OF CHAT TRIGGER HANDLING --
 		
 		PyramidHandler.doPyramid(name, message);
@@ -264,18 +310,34 @@ public class TelnetHandler implements ReceiverCallback {
 					}
 					String[] args = elems.toArray(new String[elems.size()]);
 					message = message.substring(0, message.indexOf(' '));
-					cmdHandler.exec(displayName, rank, message, args, false);
+					if (cmdHandler.exec(displayName, rank, message, args, false)) {
+						if (commandCost>0) PointsHandler.redeem(name, commandCost);
+						if (matchedTrigger!=null) matchedTrigger.setCooldown(name);
+					} //else sendChat(name, "You do not have enough " + PointsHandler.getCurrencyName() + " for this command!");
 				} else {
-					cmdHandler.exec(displayName, rank, message, new String[0], false);
+					if (cmdHandler.exec(displayName, rank, message, new String[0], false)) {
+						if (commandCost>0) PointsHandler.redeem(name, commandCost);
+						if (matchedTrigger!=null) matchedTrigger.setCooldown(name);
+					} //else sendChat(name, "You do not have enough " + PointsHandler.getCurrencyName() + " for this command!");
+				}
+			} else if (message.startsWith("?")) {
+				message = message.substring(1);
+				if (message.contains(" ")) {
+					message = message.substring(0, message.indexOf(' '));
+					cmdHandler.help(displayName, rank, message, matchedTrigger);
+				} else {
+					cmdHandler.help(displayName, rank, message, matchedTrigger);
 				}
 			} else {
 				if (!message.contains(" ") && !message.equalsIgnoreCase("list") && 
-					"true".equalsIgnoreCase(Executable.cfg.get("BOT", "SaySounds"))) {
+					"true".equalsIgnoreCase(Executable.cfg.get("Sounds", "SaySounds"))) {
 					if (Executable.cfg.hasKey("Sounds", message)) {
-						cmdHandler.exec(displayName, rank, "play", new String[]{ message }, true);
+						if (cmdHandler.exec(displayName, rank, "play", new String[]{ message }, true)) {
+							if (commandCost>0) PointsHandler.redeem(name, commandCost);
+						} //else sendChat(name, "You do not have enough " + PointsHandler.getCurrencyName() + " for this command!");
 					}
 				}
-				if ("true".equalsIgnoreCase(Executable.cfg.get("BOT", "EmoteRain"))) {
+				if (Executable.overlay!=null && "true".equalsIgnoreCase(Executable.cfg.get("Overlay", "EmoteRain"))) {
 					for (String s : Executable.emoteMap.keySet()) {
 						Pattern p = Pattern.compile(".?\\b"+s+"\\b.?");
 						Matcher m = p.matcher(message);

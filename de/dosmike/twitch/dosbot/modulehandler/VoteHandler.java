@@ -1,7 +1,12 @@
-package de.dosmike.twitch.dosbot;
+package de.dosmike.twitch.dosbot.modulehandler;
 
 import java.util.LinkedList;
 import java.util.List;
+
+import de.dosmike.twitch.dosbot.ChatRank;
+import de.dosmike.twitch.dosbot.ClientStorage;
+import de.dosmike.twitch.dosbot.Executable;
+import de.dosmike.twitch.dosbot.TwitchChatColor;
 
 public class VoteHandler {
 	private static String question;
@@ -13,21 +18,21 @@ public class VoteHandler {
 	
 	public static void startVote(String byUser, String[] args) {
 		if (ChatRank.forUser(byUser, false).compareTo(ChatRank.MOD)<0) {
-			Executable.handler.sendChat(byUser, "You need to be at least Mod to be able to start a vote!");
+			Executable.getTelnetHandler().sendChat(byUser, "You need to be at least Mod to be able to start a vote!");
 			return;
 		}
 		if (secondsRemain()>=0) {
-			Executable.handler.sendChat("A vote is already in progress!");
+			Executable.getTelnetHandler().sendChat("A vote is already in progress!");
 			return;
 		}
 		
 		if (args.length == 0) {
-			Executable.handler.sendChat(byUser, "You need to ask a question. Either add no options to make a Yea/Nay-vote or add 2 or more options");
-			Executable.handler.sendChat(byUser, "If the question or options contain spaces please quote them like \"What shall i play?\"");
+			Executable.getTelnetHandler().sendChat(byUser, "You need to ask a question. Either add no options to make a Yea/Nay-vote or add 2 or more options");
+			Executable.getTelnetHandler().sendChat(byUser, "If the question or options contain spaces please quote them like \"What shall i play?\"");
 			return;
 		} else if (args.length == 2) {
-			Executable.handler.sendChat(byUser, "A single option in not vote-worthy. Either add no options to make a Yea/Nay-vote or add 2 or more options");
-			Executable.handler.sendChat(byUser, "If the question or options contain spaces please quote them like \"What shall i play?\"");
+			Executable.getTelnetHandler().sendChat(byUser, "A single option in not vote-worthy. Either add no options to make a Yea/Nay-vote or add 2 or more options");
+			Executable.getTelnetHandler().sendChat(byUser, "If the question or options contain spaces please quote them like \"What shall i play?\"");
 			return;
 		}
 		
@@ -47,15 +52,13 @@ public class VoteHandler {
 				votes.add(0);
 			}
 		}
-		for (String user : ClientStorage.users.groups()) {
-			ClientStorage.users.remove(user, "Vote");
-		}
+		ClientStorage.resetNonPersistantKeyForAll("Vote");
 		status(true);
 	}
 	
 	public static void vote(String byUser, String option) {
 		if (secondsRemain()<1) {
-			Executable.handler.sendChat(byUser, "Sorry, the vote is over!");
+			Executable.getTelnetHandler().sendChat(byUser, "Sorry, the vote is over!");
 			return;
 		}
 		
@@ -66,11 +69,11 @@ public class VoteHandler {
 			try {
 				i = Integer.parseInt(option)-1;
 			} catch (Exception e) {
-				Executable.handler.sendChat(byUser, "I don't understand what you want to vote on");
+				Executable.getTelnetHandler().sendChat(byUser, "I don't understand what you want to vote on");
 				return;
 			}
 			if (i < 0 || i >= options.size()) {
-				Executable.handler.sendChat(byUser, "There are not that many options");
+				Executable.getTelnetHandler().sendChat(byUser, "There are not that many options");
 				return;
 			}
 		}
@@ -86,7 +89,7 @@ public class VoteHandler {
 	public static void tick() {
 		int timeRemain = secondsRemain();
 		if (timeRemain == 10) {
-			Executable.handler.sendChat("Vote ends in " + timeRemain + " second(s)...");
+			Executable.getTelnetHandler().sendChat("Vote ends in " + timeRemain + " second(s)...");
 		} else if (timeRemain == 0) {
 			status(true);
 		}
@@ -96,18 +99,18 @@ public class VoteHandler {
 		if (System.currentTimeMillis()-lastStatus < 10000 && !override) return;
 		lastStatus = System.currentTimeMillis();
 		if (start == 0) {
-			Executable.handler.sendChat("No vote was called yet BibleThump");
+			Executable.getTelnetHandler().sendChat("No vote was called yet BibleThump");
 			return;
 		}
 		int timeRemain = secondsRemain();
 		if (timeRemain>0)
-			Executable.handler.sendChat("The vote runs for " + timeRemain + " more seconds...");
+			Executable.getTelnetHandler().sendChat("The vote runs for " + timeRemain + " more seconds...");
 		else
-			Executable.handler.sendChat("The last vote ended:");
-		Executable.handler.sendChat(TwitchChatColor.Green, ":: " + question + " ::");
+			Executable.getTelnetHandler().sendChat("The last vote ended:");
+		Executable.getTelnetHandler().sendChat(TwitchChatColor.Green, ":: " + question + " ::");
 		int y = 0;
 		for (int i = 0; i < options.size(); i++) {
-			Executable.handler.sendChat((i+1) + ") " + options.get(i) + " (" + votes.get(i) + ", " + (votesTotal==0?0:votes.get(i)*100/votesTotal) + "%)");
+			Executable.getTelnetHandler().sendChat((i+1) + ") " + options.get(i) + " (" + votes.get(i) + ", " + (votesTotal==0?0:votes.get(i)*100/votesTotal) + "%)");
 			if (votes.get(i)>y)y=votes.get(i);
 		}
 		int winner = 0, windex = 0;
@@ -116,15 +119,15 @@ public class VoteHandler {
 		}
 		if (timeRemain>0) {
 			if (winner==1)
-				Executable.handler.sendChat(TwitchChatColor.Green, "> " + options.get(windex) + " < is leading.");
+				Executable.getTelnetHandler().sendChat(TwitchChatColor.Green, "> " + options.get(windex) + " < is leading.");
 			else {
-				Executable.handler.sendChat(TwitchChatColor.Green, "There's no winner yet!");
+				Executable.getTelnetHandler().sendChat(TwitchChatColor.Green, "There's no winner yet!");
 			}
 		} else {
 			if (winner==1)
-				Executable.handler.sendChat(TwitchChatColor.Green, "> " + options.get(windex) + " < won the vote.");
+				Executable.getTelnetHandler().sendChat(TwitchChatColor.Green, "> " + options.get(windex) + " < won the vote.");
 			else {
-				Executable.handler.sendChat(TwitchChatColor.Green, "The decision was unclear!");
+				Executable.getTelnetHandler().sendChat(TwitchChatColor.Green, "The decision was unclear!");
 			}
 		}
 	}

@@ -35,7 +35,7 @@ public class Window extends JFrame {
 		
 		@Override
 		public void onStart() {
-			if (Executable.cfg.hasKey("BOT", "OverlayFrameLimit")) {
+			if (Executable.cfg.hasKey("Overlay", "OverlayFrameLimit")) {
 				try {
 					delay = Integer.parseInt(Executable.cfg.get("OverlayFrameLimit"));
 					delay = 1000/delay;
@@ -65,7 +65,7 @@ public class Window extends JFrame {
 	
 	boolean moving=false;
 	int mx=0, my=0;
-	Color background = Color.decode(Executable.cfg.get("BOT", "OverlayBackground"));
+	Color background = Color.decode(Executable.cfg.get("Overlay", "OverlayBackground"));
 	/**
 	 * Create the frame.
 	 */

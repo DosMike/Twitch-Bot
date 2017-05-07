@@ -50,6 +50,13 @@ public class ClientStorage {
 		if (persist) pUsers.set(client, key, String.valueOf(value)); else users.set(client, key, String.valueOf(value));
 	}
 	
+	public static void resetNonPersistantKeyForAll(String key) {
+		check();
+		for (String user : users.groups()) {
+			users.remove(user, "Vote");
+		}
+	}
+	
 	private static void check() {
 		if (users == null) {
 			users = new INIConfig();

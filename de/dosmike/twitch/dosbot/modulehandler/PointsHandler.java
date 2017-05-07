@@ -1,6 +1,10 @@
-package de.dosmike.twitch.dosbot;
+package de.dosmike.twitch.dosbot.modulehandler;
 
 import java.util.List;
+
+import de.dosmike.twitch.dosbot.ClientStorage;
+import de.dosmike.twitch.dosbot.Console;
+import de.dosmike.twitch.dosbot.Executable;
 
 public class PointsHandler {
 	
@@ -9,7 +13,7 @@ public class PointsHandler {
 	public static void tick() {
 		if (++s < 60) return; s = 0;
 		//reset executes every minute
-		List<String> viewers = Executable.handler.getViewers();
+		List<String> viewers = Executable.getTelnetHandler().getViewers();
 		Console.println(Console.FB.YELLOW, "Giving 1 point to all " + viewers.size() + " viewers", Console.RESET);
 		for (String viewer : viewers) {
 			ClientStorage.setCV(viewer, "Points", Integer.parseInt(ClientStorage.getCV(viewer, "Points").orElse("0"))+1, true);

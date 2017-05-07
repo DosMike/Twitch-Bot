@@ -1,11 +1,14 @@
-package de.dosmike.twitch.dosbot;
+package de.dosmike.twitch.dosbot.modulehandler;
+
+import de.dosmike.twitch.dosbot.Console;
+import de.dosmike.twitch.dosbot.Executable;
 
 public class PyramidHandler {
 	static Pyramid mid = null;
 	
 	public static void doPyramid(String user, String message) {
 		//not enough people in chat to pyramid
-		if (Executable.handler.getViewcount()<2) return;
+		if (Executable.getTelnetHandler().getViewcount()<2) return;
 		
 		boolean delete=false;
 		if (mid == null) {
@@ -15,11 +18,13 @@ public class PyramidHandler {
 		            return;
 		    if (message.length() > 3) //i don't know any emotes shorter than 3 chars
 		    	mid = new Pyramid(user, message);
-		} else if(!mid.isOwner(user) && mid.getHeight()>=2) {
+		} else if(!mid.isOwner(user)) {
 			delete=true;
-			int val = mid.breakValue();
-			Executable.handler.sendChat(user + " was awarded " + val + " "+PointsHandler.getCurrencyName()+" for breaking the pyramid of " + mid.owner + " with " + (Executable.handler.getViewcount()-1) + " viewers");
-			PointsHandler.award(user, val);
+			if (mid.getHeight()>=2) {
+				int val = mid.breakValue();
+				Executable.getTelnetHandler().sendChat(user + " was awarded " + val + " "+PointsHandler.getCurrencyName()+" for breaking the pyramid of " + mid.owner + " with " + (Executable.getTelnetHandler().getViewcount()-1) + " viewers");
+				PointsHandler.award(user, val);
+			}
 		} else {
 			String[] words = message.split(" ");
 			for (int i = 1; i < words.length; i++)
@@ -31,7 +36,7 @@ public class PyramidHandler {
 				delete=true;
 				int val = mid.getValue();
 				//Console.println("Pyramid: " + mid.emote + " " + mid.height + "x pyramid completed for " + val + " points");					
-				Executable.handler.sendChat(user + " was awarded " + val + " "+PointsHandler.getCurrencyName()+" for building a " + mid.getHeight() + " high " + mid.getEmote() + " -mid while " + (Executable.handler.getViewcount()-1) + " viewers were watching, doing nothing about it.");
+				Executable.getTelnetHandler().sendChat(user + " was awarded " + val + " "+PointsHandler.getCurrencyName()+" for building a " + mid.getHeight() + " high " + mid.getEmote() + " -mid while " + (Executable.getTelnetHandler().getViewcount()-1) + " viewers were watching, doing nothing about it.");
 				PointsHandler.award(user, val);
 			}
 		}
